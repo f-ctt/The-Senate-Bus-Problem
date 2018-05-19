@@ -6,79 +6,76 @@ This rep is for learning purposes - contains bugs, uncommented code, etc.
 
 Output example:
 ```
-BUS             : start
-BUS             : arrival
-BUS             : depart
-RIDER: 0        : start
-RIDER: 0        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 0        : boarding
-BUS             : depart
-RIDER: 1        : start
-RIDER: 1        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 0        : finish
-RIDER: 1        : boarding
-BUS             : depart
-RIDER: 2        : start
-RIDER: 2        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 1        : finish
-RIDER: 2        : boarding
-BUS             : depart
-RIDER: 3        : start
-RIDER: 3        : enter
-RIDER: 4        : start
-RIDER: 4        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 2        : finish
-RIDER: 3        : boarding
-RIDER: 4        : boarding
-BUS             : depart
-RIDER: 5        : start
-RIDER: 5        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 4        : finish
-RIDER: 5        : boarding
-RIDER: 3        : finish
-BUS             : depart
-RIDER: 6        : start
-RIDER: 6        : enter
-RIDER: 7        : start
-RIDER: 7        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 5        : finish
-RIDER: 6        : boarding
-RIDER: 7        : boarding
-BUS             : depart
-BUS             : end
-BUS             : arrival
-BUS             : depart
-RIDER: 6        : finish
-RIDER: 7        : finish
-BUS             : end
-BUS             : arrival
-BUS             : depart
-RIDER: 8        : start
-RIDER: 8        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 8        : boarding
-BUS             : depart
-RIDER: 9        : start
-RIDER: 9        : enter
-BUS             : end
-BUS             : arrival
-RIDER: 8        : finish
-RIDER: 9        : boarding
-BUS             : depart
-BUS             : end
-BUS             : finish
-RIDER: 9        : finish
+BUS		    : start
+BUS		    : arrival
+BUS		    : depart
+RID: 1		: start
+RID: 1		: enter: 1
+BUS		    : end
+BUS		    : arrival
+RID: 1		: boarding: 1
+BUS		    : depart
+RID: 2		: start
+RID: 2		: enter: 1
+BUS		    : end
+RID: 1		: finish
+BUS		    : arrival
+RID: 2		: boarding: 1
+BUS		    : depart
+BUS		    : end
+BUS		    : arrival
+RID: 2		: finish
+BUS		    : depart
+RID: 3		: start
+RID: 3		: enter: 1
+BUS		    : end
+BUS		    : arrival
+RID: 3		: boarding: 1
+BUS		    : depart
+RID: 4		: start
+RID: 4		: enter: 1
+BUS		    : end
+RID: 3		: finish
+BUS		    : arrival
+RID: 4		: boarding: 1
+BUS		    : depart
+RID: 5		: start
+RID: 5		: enter: 1
+RID: 6		: start
+RID: 6		: enter: 2
+RID: 7		: start
+RID: 7		: enter: 3
+BUS		    : end
+BUS		    : arrival
+RID: 4		: finish
+RID: 8		: start
+RID: 5		: boarding: 1
+RID: 6		: boarding: 2
+RID: 7		: boarding: 3
+BUS		    : depart
+RID: 8		: enter: 1
+BUS		    : end
+RID: 5		: finish
+BUS		    : arrival
+RID: 6		: finish
+RID: 7		: finish
+RID: 8		: boarding: 1
+BUS		    : depart
+RID: 9		: start
+RID: 9		: enter: 1
+BUS		    : end
+RID: 8		: finish
+BUS		    : arrival
+RID: 9		: boarding: 1
+BUS		    : depart
+RID: 10		: start
+RID: 10		: enter: 1
+BUS		    : end
+RID: 9		: finish
+BUS		    : arrival
+RID: 10		: boarding: 1
+BUS		    : depart
+RID: 10		: finish
+BUS		    : end
+BUS		    : finish
 ```
