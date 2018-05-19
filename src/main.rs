@@ -75,12 +75,12 @@ fn main() {
     });
     handles.push(handle);
     //TODO: make min a shared var    
+    let all_aboard_c = allAboard.clone();
+    let waiting_clone = waiting.clone();
+    let bus_signal_clone = bus_signal.clone();
+    let bus_end_clone = bus_end.clone();
     for x in 0 .. 10 {
 
-        let all_aboard_c = allAboard.clone();
-        let waiting_clone = waiting.clone();
-        let bus_signal_clone = bus_signal.clone();
-        let bus_end_clone = bus_end.clone();
 
         let r: u8 = random();
         thread::sleep(Duration::from_millis(r as u64));
