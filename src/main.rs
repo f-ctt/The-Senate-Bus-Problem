@@ -5,9 +5,10 @@ use std::cmp;
 extern crate rand;
 use rand::prelude::*;
 
-fn enter_boardingArea(mutex_clone: Arc<Mutex<(i32)>>) { // update the amout of riders waiting and unlock the mutex
+fn enter_boardingArea(mutex_clone: Arc<Mutex<(i32)>>, id: u32) { // update the amout of riders waiting and unlock the mutex
     let mut waiting = mutex_clone.lock().unwrap();
     *waiting += 1;
+    println!("RID: {}\t\t: enter: {}", id, *waiting);
 }
 
 
@@ -116,10 +117,9 @@ fn main() {
 
         let handle = thread::spawn(move || {    //RIDERS
             let id = x + 1;
-            println!("RIDER: {}\t: start", id);
+            println!("RID: {}\t\t: start", id);
 
-            enter_boardingArea(waiting_clone);
-            println!("RIDER: {}\t: enter", id);
+            enter_boardingArea(waiting_clone, id);
 
             bus_c.wait_signal_arrival();
 
@@ -127,12 +127,12 @@ fn main() {
             let mut all_aboard = lock.lock().unwrap();
             *all_aboard += 1;
             cvar.notify_one();  // notify the bus a rider has boarded
+            println!("RID: {}\t\t: boarding: {}", id, *all_aboard);
             drop(all_aboard);
-            println!("RIDER: {}\t: boarding", id);
 
             bus_c.wait_signal_end();
 
-            println!("RIDER: {}\t: finish", id);
+            println!("RID: {}\t\t: finish", id);
         });
         handles.push(handle);
     }
