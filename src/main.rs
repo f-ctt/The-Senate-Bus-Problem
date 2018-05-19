@@ -23,6 +23,8 @@ struct Bus {
     capacity: u32,
     arrival: Mutex<i32>,
     arrival_cond: Condvar,
+    end: Mutex<i32>,
+    end_cond: Condvar,
 }
 
 impl Bus {
@@ -39,6 +41,20 @@ impl Bus {
         }
         *arr_s -= 1; // decrease the amout of waiting receivers
     }
+
+    fn send_end_signal(&self, waiting: i32) {
+        let mut end = self.end.lock().expect("Cannot lock - send_end");
+        *end = waiting;
+        self.end_cond.notify_all();
+    }
+
+    fn wait_end_signal(&self) {
+        let mut end = self.end.lock().expect("Cannot lock - wait_end");
+        while *end == 0 {
+            end = self.end_cond.wait(end).expect("Cannot wait - end_cond");
+        }
+        *end -= 1;
+    }
 }
 //TODO: build threads before spawning them and name them
 fn main() {
@@ -47,13 +63,12 @@ fn main() {
     let allAboard = Arc::new((Mutex::new(0), Condvar::new())); // Bus waits til all riders get in
     let bus_signal = Arc::new((Mutex::new(0_i32), Condvar::new())); // Bus arrival
     let bus_end = Arc::new((Mutex::new(0_i32), Condvar::new())); // Bus end
-    let bus = Arc::new(Bus { capacity: 5, arrival: Mutex::new(0), arrival_cond: Condvar::new()});
+    let bus = Arc::new(Bus { capacity: 5, arrival: Mutex::new(0), arrival_cond: Condvar::new(), end: Mutex::new(0), end_cond: Condvar::new()});
     
     let mut handles = vec![];
     const MAX_RIDERS: i32 = 10;
 
     let waiting_clone = waiting.clone();
-    let bus_signal_clone = bus_signal.clone();
     let allAboard_clone = allAboard.clone();
     let bus_end_clone = bus_end.clone();
     let bus_c = bus.clone();
@@ -84,10 +99,7 @@ fn main() {
             let r: u8 = random();
             thread::sleep(Duration::from_millis(r as u64));
 
-            let &(ref lock_2, ref cvar_2) = &*bus_end_clone;
-            let mut bus_end = lock_2.lock().unwrap();
-            *bus_end = min;
-            cvar_2.notify_all();
+            bus_c.send_end_signal(min);
 
             println!("BUS\t\t: end");
         }
@@ -99,7 +111,6 @@ fn main() {
 
         let all_aboard_c = allAboard.clone();
         let waiting_clone = waiting.clone();
-        let bus_signal_clone = bus_signal.clone();
         let bus_end_clone = bus_end.clone();
         let bus_c = bus.clone();
 
@@ -122,12 +133,8 @@ fn main() {
             drop(all_aboard);
             println!("RIDER: {}\t: boarding", id);
 
-            let &(ref lock, ref cvar) = &*bus_end_clone;
-            let mut bus_end = lock.lock().unwrap();
-            while *bus_end == 0{   // wait for the bus to end road
-                bus_end = cvar.wait(bus_end).unwrap();
-            }
-            *bus_end -= 1;
+            bus_c.wait_end_signal();
+
             println!("RIDER: {}\t: finish", id);
         });
         handles.push(handle);
