@@ -10,50 +10,48 @@ fn enter_boardingArea(mutex_clone: Arc<Mutex<(i32)>>) { // update the amout of r
     *waiting += 1;
 }
 
-fn wait_for_signal(mutex_clone: Arc<((Mutex<(i32)>, Condvar<>))>) {
-    let &(ref lock, ref cvar) = &*mutex_clone;
-    let mut signal = lock.lock().unwrap();
-    while *signal == 0 {
-        signal = cvar.wait(signal).unwrap();
+
+struct Notification((Mutex<u32>, Condvar));
+
+impl Notification {
+    fn notify_all(&self, receivers: u32) {
+        let &(ref lock, ref cvar) = &self.0;
+        let mut notif_val = lock.lock().expect("Cannot lock");
+        *notif_val = receivers; 
+        cvar.notify_all();
     }
-    *signal -= 1;
+
+    fn wait(&self) {
+        let &(ref lock, ref cvar) = &self.0;
+        let mut notif_val = lock.lock().expect("Cannot lock");
+        while *notif_val == 0 {
+            notif_val = cvar.wait(notif_val).expect("Cannot wait");
+        }
+        *notif_val -= 1;
+    }
 }
 
 struct Bus {
     capacity: u32,
-    arrival: Mutex<i32>,
-    arrival_cond: Condvar,
-    end: Mutex<i32>,
-    end_cond: Condvar,
+    arrival: Notification,
+    end: Notification,
 }
 
 impl Bus {
-    fn send_arrival_signal(&self, waiting: i32) {
-        let mut arr_s = self.arrival.lock().expect("Cannot lock - send_arrival");
-        *arr_s = waiting;
-        self.arrival_cond.notify_all();
+    fn send_signal_arrival(&self, waiting: u32) {
+        self.arrival.notify_all(waiting);
     }
 
-    fn wait_arrival_signal(&self) {
-        let mut arr_s = self.arrival.lock().expect("Cannot lock - wait_arrival");
-        while *arr_s == 0 {
-            arr_s = self.arrival_cond.wait(arr_s).expect("Cannot wait - arrival_cond");
-        }
-        *arr_s -= 1; // decrease the amout of waiting receivers
+    fn wait_signal_arrival(&self) {
+        self.arrival.wait();        
     }
 
-    fn send_end_signal(&self, waiting: i32) {
-        let mut end = self.end.lock().expect("Cannot lock - send_end");
-        *end = waiting;
-        self.end_cond.notify_all();
+    fn send_signal_end(&self, waiting: u32) {
+        self.end.notify_all(waiting);        
     }
 
-    fn wait_end_signal(&self) {
-        let mut end = self.end.lock().expect("Cannot lock - wait_end");
-        while *end == 0 {
-            end = self.end_cond.wait(end).expect("Cannot wait - end_cond");
-        }
-        *end -= 1;
+    fn wait_signal_end(&self) {
+        self.end.wait();
     }
 }
 //TODO: build threads before spawning them and name them
@@ -61,30 +59,30 @@ fn main() {
 
     let waiting = Arc::new(Mutex::new(0_i32));
     let allAboard = Arc::new((Mutex::new(0), Condvar::new())); // Bus waits til all riders get in
-    let bus_signal = Arc::new((Mutex::new(0_i32), Condvar::new())); // Bus arrival
-    let bus_end = Arc::new((Mutex::new(0_i32), Condvar::new())); // Bus end
-    let bus = Arc::new(Bus { capacity: 5, arrival: Mutex::new(0), arrival_cond: Condvar::new(), end: Mutex::new(0), end_cond: Condvar::new()});
+    let bus = Arc::new(Bus{ capacity: 5, 
+        arrival: Notification((Mutex::new(0), Condvar::new())), 
+        end: Notification((Mutex::new(0), Condvar::new())) 
+        });
     
     let mut handles = vec![];
-    const MAX_RIDERS: i32 = 10;
+    const MAX_RIDERS: u32 = 10;
 
     let waiting_clone = waiting.clone();
     let allAboard_clone = allAboard.clone();
-    let bus_end_clone = bus_end.clone();
     let bus_c = bus.clone();
 
     let handle = thread::spawn( move || {   // BUS
         println!("BUS\t\t: start");
-        let mut counter: i32 = 0;
+        let mut counter: u32 = 0;
         
         while counter < MAX_RIDERS {
             let mut waiting = waiting_clone.lock().unwrap();
             println!("BUS\t\t: arrival");
-            let min = cmp::min(*waiting, bus_c.capacity as i32); // TODO: capacity from argv
+            let min = cmp::min(*waiting, bus_c.capacity as i32) as u32; // TODO: capacity from argv
             *waiting = cmp::max(*waiting - bus_c.capacity as i32, 0);
             counter += min;
 
-            bus_c.send_arrival_signal(min);
+            bus_c.send_signal_arrival(min);
 
             let &(ref lock, ref cvar) = &*allAboard_clone;
             let mut all_aboard = lock.lock().unwrap();
@@ -99,7 +97,7 @@ fn main() {
             let r: u8 = random();
             thread::sleep(Duration::from_millis(r as u64));
 
-            bus_c.send_end_signal(min);
+            bus_c.send_signal_end(min);
 
             println!("BUS\t\t: end");
         }
@@ -111,7 +109,6 @@ fn main() {
 
         let all_aboard_c = allAboard.clone();
         let waiting_clone = waiting.clone();
-        let bus_end_clone = bus_end.clone();
         let bus_c = bus.clone();
 
         let r: u8 = random();
@@ -124,7 +121,7 @@ fn main() {
             enter_boardingArea(waiting_clone);
             println!("RIDER: {}\t: enter", id);
 
-            bus_c.wait_arrival_signal();
+            bus_c.wait_signal_arrival();
 
             let &(ref lock, ref cvar) = &*all_aboard_c;
             let mut all_aboard = lock.lock().unwrap();
@@ -133,7 +130,7 @@ fn main() {
             drop(all_aboard);
             println!("RIDER: {}\t: boarding", id);
 
-            bus_c.wait_end_signal();
+            bus_c.wait_signal_end();
 
             println!("RIDER: {}\t: finish", id);
         });
